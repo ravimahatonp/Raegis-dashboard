@@ -1,262 +1,80 @@
-# Aegis Dashboard — Low-Effort PR Examples
+# Low-Effort PR Examples & Quality Expectations
 
-This document shows common PR submissions that are unlikely to pass GrantFox evaluation and how to improve them. Each section pairs a minimal, checklist-only submission with an improved version that demonstrates real effort.
+This document outlines common examples of "low-effort" pull requests in the aegis-dashboard repository. PRs exhibiting these anti-patterns will typically fail maintainer evaluation and be closed. 
 
----
-
-## 1. Low-Effort UI Changes Without Screenshots
-
-UI-only changes are among the easiest to under-document. A PR that touches `.tsx` or `.css` files but lacks visual proof is immediately flagged.
-
-### Minimal submission
-
-> **PR Title:** "Fix button alignment on portfolio page"
->
-> **Description:**
-> - [x] Fixed button alignment
-> - [x] Tested locally
->
-> **Files changed:** `src/components/AssetCard.tsx`
->
-> **Screenshots:** _none_
-
-**Why it fails:**
-- No before/after screenshots — reviewer cannot verify the visual change
-- Single-line description gives zero context on what was wrong or how it was fixed
-- No indication of which browsers or viewports were tested
-- Checklist items are generic and unverifiable
-
-### Improved version
-
-> **PR Title:** "Fix asset card button misalignment on mobile viewports"
->
-> **Description:**
-> - Asset card transfer buttons overflowed their container at widths below 400px
-> - Replaced `gap-4` with `gap-2` and added `flex-wrap` to the card actions row
-> - Verified on Chrome, Firefox, and Safari at 375px, 414px, and 390px
-> - [x] Buttons remain clickable and do not overlap card borders
-> - [x] Desktop layout unchanged (regression check at 1280px+)
->
-> **Files changed:** `src/components/AssetCard.tsx`
->
-> **Screenshots:**
-> | Before (375px) | After (375px) |
-> |---|---|
-> | ![before](https://example.com/before.png) | ![after](https://example.com/after.png) |
-
-**What makes it better:**
-- Before/after screenshots at the breakpoint that broke
-- Specific description of the root cause and the exact CSS change
-- Browser and viewport test matrix stated explicitly
-- Regression check confirmation for larger viewports
-- Checklist items are concrete and verifiable
+To ensure your contributions are valuable, thoroughly reviewed, and merged, study the contrast between unacceptable submissions and their expected alternatives.
 
 ---
 
-## 2. Under-Tested PRs
+## 1. Superficial or Cosmetic Changes
 
-PRs that add logic, state changes, or API calls without corresponding test coverage or manual verification evidence.
+**The Anti-Pattern:** Submitting a PR that solely fixes a minor typo in a comment, reorders imports without a structural reason, or tweaks markdown formatting, while claiming a feature or substantial bounty.
 
-### Minimal submission
+**Unacceptable Example:**
+```tsx
+// Changes:
+// - // Check if the wallet is connected
+// + // Checks if the wallet is connected
+```
 
-> **PR Title:** "Add transfer validation for large amounts"
->
-> **Description:**
-> - Added max-amount check to the transfer modal
-> - It works when I tested it
->
-> **Files changed:** `src/components/TransferModal.tsx`
->
-> **Tests added:** _none_
->
-> **Manual testing:** "Tried a big number, got an error"
-
-**Why it fails:**
-- No unit or integration tests for new validation logic
-- Manual testing description is vague — which values were tried? What error appeared?
-- No edge case documentation (zero, negative, empty, NaN)
-- Single file change with no corresponding test file
-
-### Improved version
-
-> **PR Title:** "Enforce transfer amount ceiling of 10,000 tokens"
->
-> **Description:**
-> - Transfers exceeding 10,000 tokens now show a validation error before the transaction is submitted
-> - Validation runs client-side in `validateTransfer()` before the Freighter prompt
-> - Added 6 test cases covering the full boundary
->
-> **Files changed:**
-> - `src/components/TransferModal.tsx`
-> - `src/components/__tests__/TransferModal.test.tsx`
->
-> **Tests added:**
-> ```ts
-> describe('transfer amount ceiling', () => {
->   it('allows 10,000 tokens (at ceiling)', () => { ... });
->   it('rejects 10,001 tokens (above ceiling)', () => { ... });
->   it('allows 0 tokens (zero amount)', () => { ... });
->   it('rejects negative amounts', () => { ... });
->   it('rejects non-numeric input', () => { ... });
->   it('allows 1 token (normal amount)', () => { ... });
-> });
-> ```
->
-> **Manual testing:**
-> | Input | Expected result | Observed |
-> |---|---|---|
-> | 10,000 | Transfer proceeds | ✅ |
-> | 10,001 | "Amount exceeds maximum" error | ✅ |
-> | 0 | "Amount must be greater than 0" | ✅ |
-> | -5 | "Amount must be greater than 0" | ✅ |
-> | "abc" | Input prevented (type="number") | ✅ |
-
-**What makes it better:**
-- Test file added with 6 explicit boundary cases
-- Manual test table with input → expected → observed columns
-- Validation logic name and location stated clearly
-- Edge cases covered: ceiling boundary, zero, negative, non-numeric
+**Expected Alternative:** 
+If you notice typos, batch them together across the entire codebase or include them as a secondary commit in a PR that delivers meaningful, tested UI changes.
 
 ---
 
-## 3. Screenshot-Free UI Examples
+## 2. Under-Tested Logic (Missing Coverage)
 
-This section shows realistic, concrete examples of what screenshot-free UI PRs look like — and what the improved version should include.
+**The Anti-Pattern:** Adding or modifying core components, custom hooks, or state transitions in the React frontend without providing corresponding unit tests or visual regression fixtures.
 
-### Example A: Layout shift fix
+**Unacceptable Example:**
+```tsx
+// Adding a new compliance check hook without testing it
+export function useComplianceCheck(address: string) {
+    // Implementation added...
+    // But no .test.ts file created!
+}
+```
 
-**Minimal submission:**
-> Fixed a layout shift on the admin page. Tested, looks correct.
-
-**Improved version:**
-> Fixed a layout shift on the admin page caused by the whitelist input loading spinner pushing the mint-asset card downward. Wrapped both action cards in a `min-h-[320px]` container with `items-start`. Verified no shift during loading state on Chrome 126 (375px, 768px, 1440px).
->
-> | Before (loading state) | After (loading state) |
-> |---|---|
-> | ![before](...) | ![after](...) |
-
-### Example B: Color contrast update
-
-**Minimal submission:**
-> Updated error text color for WCAG compliance.
-
-**Improved version:**
-> Updated transfer error message color from `text-red-400` (#f87171, contrast 3.2:1) to `text-red-600` (#dc2626, contrast 5.8:1) to meet WCAG AA 4.5:1 minimum. Light mode only — dark mode already passes.
->
-> | Element | Before | After |
-> |---|---|---|
-> | Error text (light) | ![before](...) | ![after](...) |
-> | Error text (dark) | ![unchanged](...) | ![unchanged](...) |
-
-### Example C: New component
-
-**Minimal submission:**
-> Added a badge component for KYC status. Works on the portfolio page.
-
-**Improved version:**
-> Added `KycBadge` component showing "Verified" / "Pending" / "Rejected" states. Uses green/amber/red color coding. Integrated into `AssetCard` header.
->
-> | State | Screenshot |
-> |---|---|
-> | Verified | ![verified](...) |
-> | Pending | ![pending](...) |
-> | Rejected | ![rejected](...) |
->
-> Responsive check: badge scales correctly at 375px, 768px, 1440px.
-
-### Example D: Dark mode toggle
-
-**Minimal submission:**
-> Added dark mode support. All pages look fine.
-
-**Improved version:**
-> Added dark mode toggle via `next-themes`. Swapped hardcoded Tailwind colors for `dark:` variants across 4 components. Toggle button placed in navbar.
->
-> | Page | Light | Dark |
-> |---|---|---|
-> | Home | ![home-light](...) | ![home-dark](...) |
-> | Portfolio | ![portfolio-light](...) | ![portfolio-dark](...) |
-> | Admin | ![admin-light](...) | ![admin-dark](...) |
+**Expected Alternative:**
+Every new hook or major component must include robust Vitest tests covering both happy and failure paths.
 
 ---
 
-## 4. Failing-CI Examples
+## 3. Unsafe State Mutations or Suppressed Errors
 
-PRs submitted while CI is red — either ignored, unnoticed, or dismissed with a weak justification.
+**The Anti-Pattern:** Using `@ts-ignore`, `any`, or suppressing ESLint rules to bypass type safety, or swallowing errors silently in catch blocks.
 
-### Minimal submission
+**Unacceptable Example:**
+```tsx
+catch (err) {
+  // @ts-ignore
+  console.log(err); // Swallows the error silently, breaking the UI state
+}
+```
 
-> **PR Title:** "Refactor asset fetching hook"
->
-> **CI status:** ❌ 2 checks failing
->
-> **Author comment:** "Tests pass locally, CI is flaky"
->
-> **Failing checks:**
-> - `lint` — 4 errors (unused imports, missing dependency in useEffect)
-> - `typecheck` — 1 error (wrong prop type in AssetCard)
-
-**Why it fails:**
-- "CI is flaky" is not a valid justification when lint and type errors are deterministic
-- Author did not investigate or fix the failures before opening the PR
-- Forces reviewers to triage CI failures instead of reviewing the actual change
-
-### Improved version
-
-> **PR Title:** "Refactor asset fetching hook"
->
-> **CI status:** ✅ All checks passing
->
-> **Fixes applied before opening PR:**
-> - Removed unused `useCallback` import flagged by lint
-> - Added `fetchAssets` to `useEffect` dependency array
-> - Updated `AssetCard` props interface to accept `isLoading?: boolean`
->
-> **Verification:**
-> ```
-> npm run lint    → 0 errors, 0 warnings
-> npm run typecheck → 0 errors
-> npm run test    → 14 passed, 0 failed
-> ```
-
-**What makes it better:**
-- All CI checks pass before requesting review
-- Specific fixes listed for each failure that was resolved
-- Terminal output pasted as proof of clean runs
-- No reviewer time wasted on avoidable CI issues
-
-### Common failing-CI patterns and how to fix them
-
-| Failure type | Before submitting | After fixing |
-|---|---|---|
-| **Lint errors** | "Will fix later" | Run `npm run lint -- --fix`, commit result |
-| **Type errors** | "Types are wrong / too strict" | Fix types or narrow with proper guards, never use `as any` |
-| **Test failures** | "Tests need updating" | Update tests or explain why the old test is no longer valid |
-| **Build failures** | "Builds locally" | Rebase on `main`, clean install, re-run build |
-| **E2E flakes** | "CI is unreliable" | Re-run once; if it fails again, investigate and fix root cause |
+**Expected Alternative:**
+```tsx
+catch (err) {
+  const wrappedErr = err instanceof Error ? err : new Error(String(err));
+  setError(wrappedErr.message); // Properly surfaces the error to the user
+}
+```
 
 ---
 
-## Submission Checklist
+## 4. Failing CI / Ignored Checks
 
-Before opening a PR, confirm:
+**The Anti-Pattern:** Opening a PR, noticing the GitHub Actions CI pipeline fails, and requesting a maintainer review anyway.
 
-- [ ] **UI changes** include before/after screenshots (light + dark mode if applicable)
-- [ ] **Logic changes** include unit tests or a manual test table with input/expected/observed
-- [ ] **New components** show screenshots of every visual state (loading, empty, error, populated)
-- [ ] **CI is green** — `lint`, `typecheck`, and `test` all pass
-- [ ] **PR description** explains _what_ changed, _why_, and _how_ it was verified
-- [ ] **No single-line descriptions** — even small fixes need context
+**Expected Alternative:**
+Before requesting review, ensure your local build and tests pass. If CI fails after pushing, inspect the logs, fix the formatting, linter warnings, or broken tests, and push the corrections.
 
 ---
 
-## Quick Reference
+## Summary of a "High-Effort" PR
 
-| Red flag | Why it's a problem |
-|---|---|
-| No screenshots on a UI PR | Reviewer cannot verify the visual change |
-| "Tested locally" with no details | Unverifiable — no evidence of what was tested |
-| CI is red at PR open | Wastes reviewer time; suggests author didn't check their own work |
-| One-line PR description | Leaves reviewer guessing about intent and scope |
-| No test file for logic changes | No automated regression protection |
-| "Works on my machine" | Ignores environment differences; CI is the source of truth |
+1. **Meaningful:** Solves a documented issue.
+2. **Tested:** Includes robust positive and negative Vitest tests.
+3. **Safe:** Uses strict TypeScript typing.
+4. **Green CI:** Passes all local and remote checks.
+5. **Descriptive:** Explains what changed and why.
