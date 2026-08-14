@@ -1,6 +1,6 @@
-# Aegis RWA Dashboard
+# Raegis RWA Dashboard
 
-The official web interface for the **Aegis RWA Protocol**. Built with Next.js, this dashboard provides a seamless UI for administrators to mint compliant Real-World Assets and for investors to manage their portfolios.
+The official web interface for the **Raegis RWA Protocol**. Built with Next.js, this dashboard provides a seamless UI for administrators to mint compliant Real-World Assets and for investors to manage their portfolios.
 
 ## Prerequisites
 
